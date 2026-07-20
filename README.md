@@ -1,0 +1,2 @@
+# Akilli_Sehircilik_Sube_Mudurlugu_Staj-Bursa_Uludag_Universitesi_Bilgisayar_Muhendisligi
+Bursa Büyükşehir Belediyesi Akıllı Şehircilik Şube Müdürlüğünde yaptığım staj
