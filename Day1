@@ -1,0 +1,12 @@
+Akıllı şehir sistemi:Nesnelerin İnterneti (IoT), yapay zekâ ve veri analitiği gibi dijital teknolojileri kullanarak kentsel yaşamı daha verimli, sürdürülebilir ve yaşanabilir hale getiren modern bir şehircilik modelidir.
+API: iki farklı yazılımın birbiriyle iletişim kurmasını ve veri alışverişi yapmasını sağlayan bir köprüdür
+restAPI: farklı yazılım sistemlerinin internet üzerinden birbiriyle güvenli ve standart kurallar çerçevesinde iletişim kurmasını sağlayan bir mimari yapıdır[http]
+Apm(application performans monitoring): yazılımların, mobil uygulamaların veya web sitelerinin çalışma hızını, verimliliğini ve hatasız çalışıp çalışmadığını gerçek zamanlı izleme sürecidir.
+Görüntü işleme/YOLO:
+YOLOv1 - v3; Joseph Redmon tarafından geliştirildi. ResNet ve DarkNet mimarileri kullanılarak temeller atıldı. 
+v3 ile farklı boyutlardaki nesneleri (küçük/büyük) tespit etme yeteneği arttı.
+YOLOv4 - v5; Mimari optimizasyonlar ve veri artırma (data augmentation) teknikleriyle doğruluk (mAP skoru) çok ciddi oranda yükseldi.
+YOLOv5, PyTorch tabanlı yapısıyla geliştiriciler arasında standart haline geldi.
+YOLOv8 - v11; Ultralytics tarafından geliştirilen modern sürümlerdir.
+Bu sürümler artık sadece nesne tespiti yapmaz; 
+Görüntü Bölütleme (Instance Segmentation), Anahtar Nokta/Poz Tahmini (Pose Estimation) ve Nesne Takibi (Object Tracking) gibi karmaşık görevleri de tek bir çatı altında, çok daha düşük donanım kaynaklarıyla başarabilir.
