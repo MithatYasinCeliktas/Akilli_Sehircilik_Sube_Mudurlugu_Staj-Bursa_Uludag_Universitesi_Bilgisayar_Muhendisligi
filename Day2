@@ -4,4 +4,4 @@ Bir kod hücresini çalıştırdığınızda, oluşturduğu grafik, tablo veya m
 Kodların arasına Markdown dili kullanarak başlıklar, açıklamalar, görseller, web bağlantıları ve matematiksel formüller ekleyebilirsiniz.
 Arka planda bu dosyalar aslında JSON formatında yapılandırılmış düz metinlerdir. Bu sayede kodlar, çıktılar ve görseller tek bir dosya içinde saklanır.
 
-FastApi:
+FastAPI çalışması: https://github.com/MithatYasinCeliktas/Akilli_Sehircilik_Sube_Mudurlugu_Staj-Bursa_Uludag_Universitesi_Bilgisayar_Muhendisligi/blob/main/main.py
