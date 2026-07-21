@@ -1,0 +1,7 @@
+Araştırma: ipynb: Jupyter Notebook (.ipynb) dosyaları, kod yazmayı ve sonuçlarını görmeyi bir "laboratuvar defteri" gibi kolaylaştıran interaktif belgelerdir. 
+Kodlar tek bir büyük dosya yerine "Hücre" (Cell) adı verilen küçük parçalara bölünür. Her hücreyi diğerlerinden bağımsız olarak çalıştırabilirsiniz.
+Bir kod hücresini çalıştırdığınızda, oluşturduğu grafik, tablo veya metin sonucu hemen o hücrenin altında belirir.
+Kodların arasına Markdown dili kullanarak başlıklar, açıklamalar, görseller, web bağlantıları ve matematiksel formüller ekleyebilirsiniz.
+Arka planda bu dosyalar aslında JSON formatında yapılandırılmış düz metinlerdir. Bu sayede kodlar, çıktılar ve görseller tek bir dosya içinde saklanır.
+
+FastApi:
