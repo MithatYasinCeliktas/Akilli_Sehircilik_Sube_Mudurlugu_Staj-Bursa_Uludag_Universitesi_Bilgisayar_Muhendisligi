@@ -1,0 +1,167 @@
+# Proje başlangıcı: Yasaklı alan ihlali tespiti
+
+import cv2
+import numpy as np
+import sqlite3
+from datetime import datetime
+from ultralytics import YOLO
+from shapely.geometry import Point, Polygon
+
+# --- 1. VERİTABANI KURULUMU ---
+def init_db():
+    conn = sqlite3.connect("ihlal_kayitlari.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS ihlaller (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nesne_id INTEGER,
+            baslangic_zamani TEXT,
+            bitis_zamani TEXT,
+            sure_saniye REAL
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+def ihlal_kaydet(nesne_id, baslangic, bitis, sure):
+    conn = sqlite3.connect("ihlal_kayitlari.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO ihlaller (nesne_id, baslangic_zamani, bitis_zamani, sure_saniye)
+        VALUES (?, ?, ?, ?)
+    """, (nesne_id, baslangic.strftime("%Y-%m-%d %H:%M:%S"), bitis.strftime("%Y-%m-%d %H:%M:%S"), round(sure, 2)))
+    conn.commit()
+    conn.close()
+    print(f"📌 [KAYIT BİLGİSİ] ID: {nesne_id} | Süre: {round(sure, 2)} sn (YOLO Pose)")
+
+init_db()
+
+# --- 2. POSE MODELİ ---
+model = YOLO("yolov8n-pose.pt")  # Pose tahmini yapan model
+
+video_yolu = r"Placeholder.mp4"
+cap = cv2.VideoCapture(video_yolu)
+
+# Yasaklı Alan Poligonu
+RED_ZONE_PTS = np.array([[100, 100], [100, 2500], [3000, 2500], [3000, 100]], np.int32)
+red_polygon = Polygon(RED_ZONE_PTS)
+
+aktif_ihlaller = {}
+
+# --- PENCERE BOYUTUNU EKRANA SIĞDIRMA AYARI ---
+# Orijinal boyutları al
+orig_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+orig_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+# Ekrana sığacak maksimum boyut sınırları
+MAX_W, MAX_H = 1024, 720
+
+# En/Boy oranını bozmadan ölçek faktörünü bul
+scale = min(MAX_W / orig_w, MAX_H / orig_h)
+target_w = int(orig_w * scale)
+target_h = int(orig_h * scale)
+
+# Pencereyi orijinal oranını koruyarak yeniden boyutlandır
+cv2.resizeWindow(pencere_adi, target_w, target_h)
+
+while cap.isOpened():
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    # YOLO Pose Tracking çalıştır (conf=0.25 ile hassasiyet artırıldı)
+    results = model.track(frame, persist=True, classes=[0], conf=0.25, verbose=False)
+
+    # Kırmızı Alanı Çiz
+    cv2.polylines(frame, [RED_ZONE_PTS], isClosed=True, color=(0, 0, 255), thickness=3)
+    cv2.putText(frame, "YASAKLI ALAN", (RED_ZONE_PTS[0][0], RED_ZONE_PTS[0][1] - 10),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+
+    su_an = datetime.now()
+    mevcut_frame_ihlal_idleri = set()
+
+    if results[0].boxes is not None and results[0].boxes.id is not None and results[0].keypoints is not None:
+        boxes = results[0].boxes.xyxy.cpu().numpy()
+        track_ids = results[0].boxes.id.cpu().numpy().astype(int)
+        keypoints_data = results[0].keypoints.data.cpu().numpy() # [N, 17, 3] -> (x, y, confidence)
+
+        for box, track_id, kpts in zip(boxes, track_ids, keypoints_data):
+            x1, y1, x2, y2 = map(int, box)
+
+            # Eklem Koordinatları ve Güven Skorları
+            l_hip, r_hip = kpts[11], kpts[12]      # Kalçalar
+            l_knee, r_knee = kpts[13], kpts[14]    # Dizler
+            l_ankle, r_ankle = kpts[15], kpts[16]  # Ayak Bilekleri
+
+            # --- DİNAMİK AYAK / ZEMİN NOKTASI HESABI ---
+            # 1. Öncelik: Ayak bilekleri görünüyorsa
+            if l_ankle[2] > 0.4 or r_ankle[2] > 0.4:
+                foot_x = int((x1 + x2) / 2)
+                foot_y = int(max(l_ankle[1], r_ankle[1]))
+            
+            # 2. Öncelik: Ayak kapalı ama diz ve kalça görünüyorsa (Aşağı doğru tahmin et)
+            elif (l_knee[2] > 0.3 or r_knee[2] > 0.3) and (l_hip[2] > 0.3 or r_hip[2] > 0.3):
+                hip_y = (l_hip[1] + r_hip[1]) / 2
+                knee_y = (l_knee[1] + r_knee[1]) / 2
+                uyluk_boyu = abs(knee_y - hip_y)
+                
+                foot_x = int((x1 + x2) / 2)
+                foot_y = int(knee_y + (uyluk_boyu * 1.1)) # Baldır boyunu ekleyip yeri tahmin et
+            
+            # 3. Öncelik: Standart kutu alt sınırı
+            else:
+                foot_x = int((x1 + x2) / 2)
+                foot_y = y2
+
+            foot_point = Point(foot_x, foot_y)
+
+            # Alan Kontrolü
+            is_inside = red_polygon.contains(foot_point)
+
+            if is_inside:
+                mevcut_frame_ihlal_idleri.add(track_id)
+                box_color = (0, 0, 255) # Kırmızı
+
+                if track_id not in aktif_ihlaller:
+                    aktif_ihlaller[track_id] = {"baslangic": su_an, "son_gorulme": su_an}
+                else:
+                    aktif_ihlaller[track_id]["son_gorulme"] = su_an
+
+                gecen_sure = (su_an - aktif_ihlaller[track_id]["baslangic"]).total_seconds()
+                label = f"IHLAL! ID: {track_id} ({round(gecen_sure, 1)}s)"
+            else:
+                box_color = (0, 255, 0) # Yeşil
+                label = f"ID: {track_id}"
+
+            # Çizimler
+            cv2.rectangle(frame, (x1, y1), (x2, y2), box_color, 2)
+            # Hesaplanan gerçek/sanal ayak noktasını mor daire ile göster
+            cv2.circle(frame, (foot_x, foot_y), 6, (255, 0, 255), -1) 
+            cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, box_color, 2)
+
+    # --- 3. ALANDAN ÇIKANLARI KAYDETME ---
+    tamamlanan_ids = []
+    for track_id, bilgi in aktif_ihlaller.items():
+        if track_id not in mevcut_frame_ihlal_idleri:
+            if (su_an - bilgi["son_gorulme"]).total_seconds() > 1.0:
+                toplam_sure = (bilgi["son_gorulme"] - bilgi["baslangic"]).total_seconds()
+                if toplam_sure > 0.5:
+                    ihlal_kaydet(track_id, bilgi["baslangic"], bilgi["son_gorulme"], toplam_sure)
+                tamamlanan_ids.append(track_id)
+
+    for tid in tamamlanan_ids:
+        del aktif_ihlaller[tid]
+
+    cv2.imshow("Bursa BBB - YOLO Pose Ihlal Tespiti", frame)
+    if cv2.waitKey(25) & 0xFF == ord('q'):
+        break
+
+    # --- 4. VİDEO BİTTİĞİNDE VEYA KAPATILDIĞINDA KALAN İHLALLERİ KAYDETME ---
+print("\n⚙️ Video akışı sona erdi. Alanda kalan aktif ihlaller kaydediliyor...")
+for track_id, bilgi in aktif_ihlaller.items():
+    toplam_sure = (bilgi["son_gorulme"] - bilgi["baslangic"]).total_seconds()
+    if toplam_sure > 0.5:
+        ihlal_kaydet(track_id, bilgi["baslangic"], bilgi["son_gorulme"], toplam_sure)
+
+cap.release()
+cv2.destroyAllWindows()
