@@ -1,0 +1,73 @@
+#proje devamı: aylık faaliyet raporlama
+dosya haritası çıkarıldı:
+bursa-faaliyet-raporu/
+├── backend/
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── v1/
+│   │   │   │   ├── endpoints/
+│   │   │   │   │   ├── auth.py
+│   │   │   │   │   ├── users.py
+│   │   │   │   │   ├── departments.py
+│   │   │   │   │   ├── reports.py
+│   │   │   │   │   └── files.py
+│   │   │   │   └── router.py
+│   │   ├── core/
+│   │   │   ├── config.py
+│   │   │   ├── database.py
+│   │   │   ├── security.py
+│   │   │   └── deps.py
+│   │   ├── models/
+│   │   │   ├── user.py
+│   │   │   ├── department.py
+│   │   │   ├── report.py
+│   │   │   └── excel_file.py
+│   │   ├── schemas/
+│   │   │   ├── user.py
+│   │   │   ├── report.py
+│   │   │   └── auth.py
+│   │   ├── services/
+│   │   │   ├── auth_service.py
+│   │   │   ├── report_service.py
+│   │   │   └── excel_service.py
+│   │   └── main.py
+│   ├── alembic/
+│   ├── templates/
+│   │   └── master_report_template.xlsx
+│   ├── storage/
+│   │   └── reports/
+│   ├── requirements.txt
+│   └── .env
+└── frontend/
+    ├── src/
+    │   ├── app/
+    │   │   ├── core/
+    │   │   │   ├── guards/
+    │   │   │   │   ├── auth.guard.ts
+    │   │   │   │   └── role.guard.ts
+    │   │   │   ├── interceptors/
+    │   │   │   │   └── auth.interceptor.ts
+    │   │   │   ├── services/
+    │   │   │   │   ├── auth.service.ts
+    │   │   │   │   ├── report.service.ts
+    │   │   │   │   └── user.service.ts
+    │   │   │   └── models/
+    │   │   │       ├── report.model.ts
+    │   │   │       └── user.model.ts
+    │   │   ├── features/
+    │   │   │   ├── auth/
+    │   │   │   │   └── login/
+    │   │   │   ├── dashboard/
+    │   │   │   ├── report-entry/
+    │   │   │   │   └── report-form.component.ts (.html, .scss)
+    │   │   │   └── report-list/
+    │   │   │       └── report-list.component.ts (.html, .scss)
+    │   │   ├── shared/
+    │   │   │   └── components/
+    │   │   ├── app.config.ts
+    │   │   ├── app.routes.ts
+    │   │   └── app.component.ts
+    │   ├── assets/
+    │   └── styles.scss
+    ├── angular.json
+    └── package.json
